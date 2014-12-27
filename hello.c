@@ -1,6 +1,9 @@
+#include <stdio.h>
+
+int
 main ()
 {
-	puts("Hello, World!");
-	return 0;
+	char *greeting = "Hello, World";
+	return (puts(greeting) != EOF);
 }
 
