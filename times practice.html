@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Times Tables Practice</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #f4f4f9;
+      padding: 20px;
+    }
+    .container {
+      background-color: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+      width: 300px;
+      margin: auto;
+    }
+    input[type="number"] {
+      padding: 5px;
+      font-size: 16px;
+      width: 80px;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .feedback {
+      font-size: 20px;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Times Tables Practice</h1>
+    <p>Practice multiplying numbers from 1 to 12</p>
+
+    <div id="questionContainer">
+      <p id="question"></p>
+      <input type="number" id="answer" placeholder="Your answer">
+      <button onclick="checkAnswer()">Check Answer</button>
+    </div>
+
+    <p id="feedback" class="feedback"></p>
+    <button onclick="generateQuestion()">Next Question</button>
+  </div>
+
+  <script>
+    let currentQuestion = { multiplier: 0, multiplicand: 0, answer: 0 };
+
+    // Function to generate a random multiplication question
+    function generateQuestion() {
+      const multiplier = Math.floor(Math.random() * 12) + 1; // Random number between 1 and 12
+      const multiplicand = Math.floor(Math.random() * 12) + 1; // Random number between 1 and 12
+      const answer = multiplier * multiplicand;
+
+      currentQuestion = { multiplier, multiplicand, answer };
+
+      // Display the question
+      document.getElementById("question").textContent = `What is ${multiplier} × ${multiplicand}?`;
+      document.getElementById("answer").value = ""; // Clear the answer input
+      document.getElementById("feedback").textContent = ""; // Clear feedback
+    }
+
+    // Function to check if the provided answer is correct
+    function checkAnswer() {
+      const userAnswer = parseInt(document.getElementById("answer").value);
+      const feedbackElement = document.getElementById("feedback");
+
+      if (userAnswer === currentQuestion.answer) {
+        feedbackElement.textContent = "Correct! Well done!";
+        feedbackElement.style.color = "green";
+      } else {
+        feedbackElement.textContent = `Oops! The correct answer is ${currentQuestion.answer}.`;
+        feedbackElement.style.color = "red";
+      }
+    }
+
+    // Generate the first question when the page loads
+    window.onload = generateQuestion;
+  </script>
+</body>
+</html>
