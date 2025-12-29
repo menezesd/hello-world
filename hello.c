@@ -4,6 +4,6 @@ int
 main ()
 {
 	char *greeting = "Hello, World";
-	return (puts(greeting) != EOF); /* EOF indicates error */
+	return puts(greeting) == EOF ? 1 : 0;
 }
 
