@@ -1,96 +1,1369 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Times Tables Practice</title>
   <style>
+    :root {
+      --bg:#f4f4f9; --card:#fff; --ink:#111; --ok:#2e7d32; --bad:#c62828; --muted:#6b7280;
+      --shadow:0 12px 30px rgba(0,0,0,.08);
+      --btn-primary:#4caf50; --btn-primary-text:#fff;
+      --btn-warning:#f59e0b; --btn-warning-text:#111;
+      --border:#e5e7eb;
+    }
+    .dark {
+      --bg:#0f172a; --card:#111827; --ink:#e5e7eb; --ok:#22c55e; --bad:#f87171; --muted:#94a3b8;
+      --shadow:0 18px 40px rgba(0,0,0,.35);
+      --btn-primary:#22c55e; --btn-primary-text:#111;
+      --btn-warning:#fbbf24; --btn-warning-text:#111;
+      --border:#374151;
+    }
+    * { box-sizing: border-box; }
     body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      background-color: #f4f4f9;
-      padding: 20px;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      margin: 0; padding: 12px;
+      display: grid; place-items: center; min-height: 100dvh;
     }
     .container {
-      background-color: white;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-      width: 300px;
-      margin: auto;
+      width: min(420px, 100%);
+      background: var(--card);
+      padding: 14px;
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
     }
+    h1 { margin: 0; font-size: 24px; }
+    .sub { margin: 0 0 4px; color: var(--muted); font-size: 14px; }
+    #score {
+      font-size: 13px; color: var(--muted);
+      margin: 0 0 6px;
+    }
+    #score span { font-weight: 700; color: var(--ink); }
+    #question { font-size: 24px; font-weight: 700; margin: 4px 0 8px; }
+    .row { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; }
     input[type="number"] {
-      padding: 5px;
-      font-size: 16px;
-      width: 80px;
+      padding: 10px 12px; font-size: 18px; width: 100%;
+      border: 1px solid var(--border); border-radius: 10px;
+      background: var(--card); color: var(--ink);
     }
     button {
-      background-color: #4CAF50;
-      color: white;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 16px;
+      background: var(--btn-primary); color: var(--btn-primary-text); border: none; border-radius: 10px;
+      padding: 10px 14px; font-size: 16px; cursor: pointer; min-height: 42px;
+      transition: transform .02s ease, filter .2s ease, background-color .2s ease;
     }
-    button:hover {
-      background-color: #45a049;
+    button:hover { filter: brightness(.96); }
+    button:active { transform: translateY(1px); }
+    #feedback { font-size: 16px; font-weight: 700; margin: 6px 0 0; min-height: 22px; }
+    .ok { color: var(--ok); }
+    .bad { color: var(--bad); }
+    .sr { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+
+    .hidden { display: none; }
+    #menu { display: flex; flex-direction: column; gap: 12px; }
+    #timer { font-size: 18px; font-weight: 700; color: var(--ok); margin-bottom: 4px; }
+    #game-over h2 { font-size: 20px; margin: 0 0 6px; }
+    .secondary { background-color: var(--muted); }
+
+    .hud {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 2px;
     }
-    .feedback {
-      font-size: 20px;
-      margin-top: 10px;
-      font-weight: bold;
+    #pause { background: var(--btn-warning); color: var(--btn-warning-text); padding: 8px 12px; font-size: 14px; min-width: 80px; }
+    #keypad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: auto;
+      padding-top: 8px;
+    }
+    #keypad button { padding: 16px 0; font-size: 24px; min-height: 52px; }
+    #keypad button.wide { grid-column: span 2; }
+
+    @keyframes pop {
+      0% { transform: scale(1); }
+      40% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+    .flash { animation: pop .25s ease; }
+
+    .bar {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      margin: 2px 0;
+      flex-wrap: wrap;
+    }
+    .bar button { padding: 6px 10px; font-size: 13px; min-height: 32px; }
+
+    .timer-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+    }
+    #timer-bar {
+      flex: 1;
+      height: 8px;
+      background: var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    #timer-bar-fill {
+      height: 100%;
+      background: var(--ok);
+      border-radius: 4px;
+      transition: width 0.2s linear, background-color 0.3s ease;
+    }
+    #timer-bar-fill.warning { background: var(--btn-warning); }
+    #timer-bar-fill.danger { background: var(--bad); }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-6px); }
+      40% { transform: translateX(6px); }
+      60% { transform: translateX(-4px); }
+      80% { transform: translateX(4px); }
+    }
+    .shake { animation: shake 0.4s ease; }
+
+    input[type="number"].input-ok {
+      border-color: var(--ok);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--ok) 30%, transparent);
+    }
+    input[type="number"].input-bad {
+      border-color: var(--bad);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--bad) 30%, transparent);
+    }
+
+    button:active { transform: scale(0.96); }
+    #keypad button:active { transform: scale(0.92); }
+
+    .streak-display {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .flame {
+      display: inline-block;
+      transition: transform 0.2s ease, filter 0.2s ease;
+    }
+    .flame.hot { transform: scale(1.3); filter: brightness(1.2); }
+    .flame.fire { transform: scale(1.6); filter: brightness(1.3) drop-shadow(0 0 4px orange); }
+
+    #menu, #game-area, #game-over {
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+    #menu.hidden, #game-area.hidden, #game-over.hidden {
+      opacity: 0;
+      transform: translateY(10px);
+      pointer-events: none;
+      position: absolute;
+    }
+    #menu:not(.hidden), #game-area:not(.hidden), #game-over:not(.hidden) {
+      opacity: 1;
+      transform: translateY(0);
+      position: relative;
+    }
+
+    #confetti {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    .danger-btn {
+      background: var(--bad);
+      color: #fff;
+    }
+
+    /* Missed facts display */
+    #missed-facts {
+      margin-top: 8px;
+      text-align: left;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+    #missed-facts h3 {
+      font-size: 14px;
+      margin: 0 0 6px;
+      color: var(--bad);
+    }
+    .missed-fact {
+      display: inline-block;
+      background: color-mix(in srgb, var(--bad) 15%, transparent);
+      border: 1px solid var(--bad);
+      border-radius: 6px;
+      padding: 4px 8px;
+      margin: 2px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    @media (max-width: 520px) {
+      body { padding: 8px; }
+      .container { padding: 12px; }
+      .row { grid-template-columns: 1fr; gap: 6px; }
+      #checkBtn { width: 100%; }
+      #keypad { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+      #keypad button { padding: 14px 0; font-size: 22px; min-height: 48px; }
+    }
+
+    @media (max-height: 500px) and (orientation: landscape) {
+      body { padding: 6px; }
+      .container {
+        padding: 10px;
+        gap: 2px;
+        flex-direction: row;
+        flex-wrap: wrap;
+        width: min(680px, 100%);
+      }
+      h1 { font-size: 20px; width: 100%; }
+      .bar { width: 100%; margin: 0; }
+      #menu, #game-over { width: 100%; }
+      #game-area {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        width: 100%;
+      }
+      .game-left { display: flex; flex-direction: column; gap: 4px; }
+      #keypad {
+        margin: 0;
+        padding: 0;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 4px;
+      }
+      #keypad button { padding: 8px 0; font-size: 18px; min-height: 36px; }
+      #question { font-size: 20px; margin: 2px 0 4px; }
+      #feedback { font-size: 14px; min-height: 18px; margin: 4px 0 0; }
+      .hud { margin-bottom: 0; }
+      #score { margin: 0 0 2px; font-size: 12px; }
     }
   </style>
 </head>
 <body>
+  <canvas id="confetti"></canvas>
   <div class="container">
-    <h1>Times Tables Practice</h1>
-    <p>Practice multiplying numbers from 1 to 12</p>
-
-    <div id="questionContainer">
-      <p id="question"></p>
-      <input type="number" id="answer" placeholder="Your answer">
-      <button onclick="checkAnswer()">Check Answer</button>
+    <h1>Times Tables</h1>
+    <p id="status" class="sr" aria-live="polite"></p>
+    <div class="bar">
+      <button id="theme-toggle" type="button" class="secondary">Dark Mode</button>
+      <button id="haptics-toggle" type="button" class="secondary">Haptics Off</button>
+      <button id="sound-toggle" type="button" class="secondary">Sound Off</button>
+      <button id="keypad-toggle" type="button" class="secondary">Hide System KB</button>
     </div>
 
-    <p id="feedback" class="feedback"></p>
-    <button onclick="generateQuestion()">Next Question</button>
+    <!-- Main Menu -->
+    <div id="menu">
+      <p class="sub">Choose a mode to start.</p>
+      <p id="best-line" class="sub"></p>
+      <button id="start-practice">Endless Practice</button>
+      <button id="start-challenge">60s Challenge</button>
+      <button id="reset-progress" type="button" class="danger-btn">Reset All Progress</button>
+    </div>
+
+    <!-- Game Area -->
+    <div id="game-area" class="hidden">
+      <div class="game-left">
+        <div class="hud">
+          <div class="timer-wrap">
+            <div id="timer" role="status" aria-live="polite" aria-atomic="true"></div>
+            <div id="timer-bar" class="hidden"><div id="timer-bar-fill"></div></div>
+          </div>
+          <button id="pause" type="button" class="secondary hidden">Pause</button>
+        </div>
+        <div id="score"></div>
+        <div id="question" aria-live="polite"></div>
+        <form id="qaForm" autocomplete="off">
+          <label class="sr" for="answer">Your answer</label>
+          <div class="row">
+            <input type="number" id="answer" inputmode="numeric" placeholder="Your answer" required />
+            <button id="checkBtn" type="submit">Check</button>
+          </div>
+        </form>
+        <div id="feedback" aria-live="polite"></div>
+      </div>
+      <div id="keypad" class="hidden" aria-label="On-screen number pad">
+        <button data-key="7" type="button">7</button>
+        <button data-key="8" type="button">8</button>
+        <button data-key="9" type="button">9</button>
+        <button data-key="4" type="button">4</button>
+        <button data-key="5" type="button">5</button>
+        <button data-key="6" type="button">6</button>
+        <button data-key="1" type="button">1</button>
+        <button data-key="2" type="button">2</button>
+        <button data-key="3" type="button">3</button>
+        <button data-key="0" type="button" class="wide">0</button>
+        <button data-key="backspace" type="button">⌫</button>
+        <button data-key="enter" type="button">↵</button>
+      </div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="game-over" class="hidden">
+      <h2>Time's Up!</h2>
+      <div id="final-score" class="sub"></div>
+      <div id="challenge-best" class="sub"></div>
+      <div id="missed-facts"></div>
+      <button id="play-again">Play Again</button>
+    </div>
+
   </div>
 
   <script>
-    let currentQuestion = { multiplier: 0, multiplicand: 0, answer: 0 };
+  (function () {
+    "use strict";
 
-    // Function to generate a random multiplication question
-    function generateQuestion() {
-      const multiplier = Math.floor(Math.random() * 12) + 1; // Random number between 1 and 12
-      const multiplicand = Math.floor(Math.random() * 12) + 1; // Random number between 1 and 12
-      const answer = multiplier * multiplicand;
+    // =========================================================================
+    // CONFIGURATION
+    // =========================================================================
+    const CONFIG = {
+      // Game settings
+      TABLE_MIN: 1,
+      TABLE_MAX: 12,
+      CHALLENGE_DURATION_MS: 60000,
+      CHALLENGE_DURATION_SEC: 60,
 
-      currentQuestion = { multiplier, multiplicand, answer };
+      // Timing
+      TIMER_INTERVAL_MS: 200,
+      AUTO_ADVANCE_DELAY_MS: 600,
+      INPUT_FLASH_DURATION_MS: 400,
+      KEYSTROKE_GUARD_MS: 500,
+      DEBOUNCE_MS: 100,
 
-      // Display the question
-      document.getElementById("question").textContent = `What is ${multiplier} × ${multiplicand}?`;
-      document.getElementById("answer").value = ""; // Clear the answer input
-      document.getElementById("feedback").textContent = ""; // Clear feedback
+      // Timer thresholds
+      TIMER_WARNING_SEC: 15,
+      TIMER_DANGER_SEC: 5,
+
+      // Spaced repetition
+      MS_PER_MINUTE: 60000,
+      WEIGHT_TIME_OFFSET: 5,
+
+      // Haptics patterns (vibration durations in ms)
+      HAPTIC_CORRECT: [20],
+      HAPTIC_WRONG: [60],
+
+      // Sound frequencies (Hz)
+      SOUND: {
+        CORRECT: [523, 659, 784],      // C5, E5, G5
+        WRONG: [200, 150],              // Low tones
+        HIGH_SCORE: [523, 659, 784, 1047], // C5, E5, G5, C6
+        TEST: 440,                      // A4
+        NOTE_DURATION: 0.1,
+        NOTE_DELAY: 80
+      },
+
+      // Confetti
+      CONFETTI: {
+        PARTICLE_COUNT: 80,
+        DURATION_MS: 2500,
+        GRAVITY: 0.3,
+        VELOCITY_X: 15,
+        VELOCITY_Y: 15,
+        SIZE_MIN: 4,
+        SIZE_MAX: 12,
+        COLORS: ['#f44336', '#e91e63', '#9c27b0', '#3f51b5', '#2196f3', '#4caf50', '#ffeb3b', '#ff9800']
+      },
+
+      // Streak thresholds
+      STREAK_HOT: 5,
+      STREAK_FIRE: 10,
+      HIGH_SCORE_MIN: 5
+    };
+
+    // =========================================================================
+    // DOM ELEMENTS
+    // =========================================================================
+    const dom = {
+      // Sections
+      menu: document.getElementById('menu'),
+      gameArea: document.getElementById('game-area'),
+      gameOver: document.getElementById('game-over'),
+
+      // Timer
+      timer: document.getElementById('timer'),
+      timerBar: document.getElementById('timer-bar'),
+      timerBarFill: document.getElementById('timer-bar-fill'),
+
+      // Game elements
+      score: document.getElementById('score'),
+      question: document.getElementById('question'),
+      form: document.getElementById('qaForm'),
+      input: document.getElementById('answer'),
+      checkBtn: document.getElementById('checkBtn'),
+      feedback: document.getElementById('feedback'),
+
+      // Game over elements
+      finalScore: document.getElementById('final-score'),
+      challengeBest: document.getElementById('challenge-best'),
+      missedFacts: document.getElementById('missed-facts'),
+
+      // Buttons
+      startPracticeBtn: document.getElementById('start-practice'),
+      startChallengeBtn: document.getElementById('start-challenge'),
+      playAgainBtn: document.getElementById('play-again'),
+      pauseBtn: document.getElementById('pause'),
+      resetBtn: document.getElementById('reset-progress'),
+
+      // Keypad
+      keypad: document.getElementById('keypad'),
+
+      // Preferences
+      themeToggle: document.getElementById('theme-toggle'),
+      hapticsToggle: document.getElementById('haptics-toggle'),
+      soundToggle: document.getElementById('sound-toggle'),
+      keypadToggle: document.getElementById('keypad-toggle'),
+
+      // Misc
+      status: document.getElementById('status'),
+      bestLine: document.getElementById('best-line'),
+      confetti: document.getElementById('confetti')
+    };
+
+    // =========================================================================
+    // STORAGE
+    // =========================================================================
+    const STORAGE_KEYS = {
+      practice: 'times-practice-v1',
+      challengeBest: 'times-challenge-best',
+      prefs: 'times-prefs-v1'
+    };
+
+    const Storage = {
+      sanitizeDeck(deck) {
+        if (!Array.isArray(deck)) return null;
+        const cleaned = deck
+          .map((fact) => {
+            if (
+              typeof fact?.a !== 'number' ||
+              typeof fact?.b !== 'number' ||
+              typeof fact?.ans !== 'number'
+            ) return null;
+            return {
+              a: fact.a,
+              b: fact.b,
+              ans: fact.ans,
+              strength: Number.isFinite(fact.strength) ? fact.strength : 0,
+              lastSeen: Number.isFinite(fact.lastSeen) ? fact.lastSeen : 0
+            };
+          })
+          .filter(Boolean);
+        return cleaned.length ? cleaned : null;
+      },
+
+      loadPracticeProgress() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEYS.practice);
+          if (!raw) return null;
+          const parsed = JSON.parse(raw);
+          const deck = this.sanitizeDeck(parsed.deck);
+          const statsValid = parsed?.stats &&
+            ['correct', 'total', 'streak', 'best'].every(k => Number.isFinite(parsed.stats[k]));
+          if (deck && statsValid) return { deck, stats: parsed.stats };
+        } catch {
+          // ignore
+        }
+        return null;
+      },
+
+      savePracticeProgress(gameState, stats, deck) {
+        if (gameState.type !== 'practice') return;
+        try {
+          localStorage.setItem(STORAGE_KEYS.practice, JSON.stringify({ deck, stats }));
+        } catch {
+          // ignore
+        }
+      },
+
+      loadChallengeBest() {
+        try {
+          const val = Number(localStorage.getItem(STORAGE_KEYS.challengeBest));
+          return Number.isFinite(val) ? val : 0;
+        } catch {
+          return 0;
+        }
+      },
+
+      saveChallengeBest(score) {
+        if (!Number.isFinite(score)) return;
+        try {
+          const current = this.loadChallengeBest();
+          localStorage.setItem(STORAGE_KEYS.challengeBest, String(Math.max(current, score)));
+        } catch {
+          // ignore
+        }
+      },
+
+      loadPrefs() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEYS.prefs);
+          if (!raw) return null;
+          const parsed = JSON.parse(raw);
+          return {
+            theme: parsed.theme === 'dark' ? 'dark' : 'light',
+            haptics: Boolean(parsed.haptics),
+            sound: Boolean(parsed.sound),
+            useKeypadOnly: Boolean(parsed.useKeypadOnly)
+          };
+        } catch {
+          return null;
+        }
+      },
+
+      savePrefs(prefs) {
+        try {
+          localStorage.setItem(STORAGE_KEYS.prefs, JSON.stringify(prefs));
+        } catch {
+          // ignore
+        }
+      }
+    };
+
+    // =========================================================================
+    // SOUND MANAGER
+    // =========================================================================
+    const SoundManager = {
+      ctx: null,
+
+      init() {
+        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      },
+
+      play(frequency, duration, type = 'sine') {
+        if (!state.prefs.sound || !this.ctx) return;
+        try {
+          if (this.ctx.state === 'suspended') this.ctx.resume();
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = type;
+          osc.frequency.value = frequency;
+          gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + duration);
+        } catch {
+          // Audio not supported
+        }
+      },
+
+      playCorrect() {
+        const { CORRECT, NOTE_DURATION, NOTE_DELAY } = CONFIG.SOUND;
+        CORRECT.forEach((freq, i) => {
+          setTimeout(() => this.play(freq, NOTE_DURATION), i * NOTE_DELAY);
+        });
+      },
+
+      playWrong() {
+        const { WRONG, NOTE_DURATION } = CONFIG.SOUND;
+        this.play(WRONG[0], NOTE_DURATION * 1.5, 'sawtooth');
+        setTimeout(() => this.play(WRONG[1], NOTE_DURATION * 2, 'sawtooth'), 100);
+      },
+
+      playHighScore() {
+        CONFIG.SOUND.HIGH_SCORE.forEach((freq, i) => {
+          setTimeout(() => this.play(freq, 0.2), i * 120);
+        });
+      },
+
+      playTest() {
+        this.play(CONFIG.SOUND.TEST, CONFIG.SOUND.NOTE_DURATION);
+      }
+    };
+
+    // =========================================================================
+    // HAPTICS MANAGER
+    // =========================================================================
+    const HapticsManager = {
+      buzz(pattern) {
+        if (!state.prefs.haptics || !navigator.vibrate) return;
+        navigator.vibrate(pattern);
+      },
+
+      correct() {
+        this.buzz(CONFIG.HAPTIC_CORRECT);
+      },
+
+      wrong() {
+        this.buzz(CONFIG.HAPTIC_WRONG);
+      }
+    };
+
+    // =========================================================================
+    // TIMER MANAGER
+    // =========================================================================
+    const TimerManager = {
+      intervalId: null,
+      deadline: null,
+      remainingMs: 0,
+
+      start(durationMs, onTick, onComplete) {
+        this.clear();
+        this.deadline = Date.now() + durationMs;
+        this.remainingMs = durationMs;
+        this.onTick = onTick;
+        this.onComplete = onComplete;
+        this.intervalId = setInterval(() => this.update(), CONFIG.TIMER_INTERVAL_MS);
+        this.update();
+      },
+
+      update() {
+        if (state.game.paused) return;
+        this.remainingMs = Math.max(0, this.deadline - Date.now());
+        const seconds = Math.ceil(this.remainingMs / 1000);
+
+        if (this.onTick) this.onTick(seconds);
+        if (this.remainingMs <= 0 && this.onComplete) {
+          this.clear();
+          this.onComplete();
+        }
+      },
+
+      pause() {
+        this.clear();
+        this.remainingMs = Math.max(0, this.deadline - Date.now());
+      },
+
+      resume() {
+        this.deadline = Date.now() + this.remainingMs;
+        this.intervalId = setInterval(() => this.update(), CONFIG.TIMER_INTERVAL_MS);
+        this.update();
+      },
+
+      clear() {
+        if (this.intervalId) {
+          clearInterval(this.intervalId);
+          this.intervalId = null;
+        }
+      },
+
+      getSeconds() {
+        return Math.ceil(this.remainingMs / 1000);
+      }
+    };
+
+    // =========================================================================
+    // CONFETTI MANAGER
+    // =========================================================================
+    const ConfettiManager = {
+      launch() {
+        const canvas = dom.confetti;
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const { PARTICLE_COUNT, DURATION_MS, GRAVITY, VELOCITY_X, VELOCITY_Y,
+                SIZE_MIN, SIZE_MAX, COLORS } = CONFIG.CONFETTI;
+
+        const particles = Array.from({ length: PARTICLE_COUNT }, () => ({
+          x: canvas.width / 2,
+          y: canvas.height / 2,
+          vx: (Math.random() - 0.5) * VELOCITY_X,
+          vy: (Math.random() - 0.7) * VELOCITY_Y,
+          color: COLORS[Math.floor(Math.random() * COLORS.length)],
+          size: Math.random() * (SIZE_MAX - SIZE_MIN) + SIZE_MIN,
+          rotation: Math.random() * 360,
+          rotationSpeed: (Math.random() - 0.5) * 10
+        }));
+
+        const startTime = Date.now();
+
+        const animate = () => {
+          const elapsed = Date.now() - startTime;
+          if (elapsed > DURATION_MS) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            return;
+          }
+
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          const alpha = 1 - (elapsed / DURATION_MS);
+
+          particles.forEach(p => {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += GRAVITY;
+            p.rotation += p.rotationSpeed;
+
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.rotation * Math.PI / 180);
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = p.color;
+            ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+            ctx.restore();
+          });
+
+          requestAnimationFrame(animate);
+        };
+
+        animate();
+      }
+    };
+
+    // =========================================================================
+    // SPACED REPETITION
+    // =========================================================================
+    const SpacedRepetition = {
+      generateDeck() {
+        const deck = [];
+        for (let i = CONFIG.TABLE_MIN; i <= CONFIG.TABLE_MAX; i++) {
+          for (let j = CONFIG.TABLE_MIN; j <= CONFIG.TABLE_MAX; j++) {
+            deck.push({ a: i, b: j, ans: i * j, strength: 0, lastSeen: 0 });
+          }
+        }
+        return deck;
+      },
+
+      selectFact(deck) {
+        if (!deck.length) return -1;
+
+        let totalWeight = 0;
+        const weights = deck.map(fact => {
+          const timeSinceLastSeen = (Date.now() - fact.lastSeen) / CONFIG.MS_PER_MINUTE;
+          const weight = (timeSinceLastSeen + CONFIG.WEIGHT_TIME_OFFSET) * Math.pow(2, -fact.strength);
+          totalWeight += weight;
+          return weight;
+        });
+
+        let random = Math.random() * totalWeight;
+        for (let i = 0; i < deck.length; i++) {
+          if (random < weights[i]) return i;
+          random -= weights[i];
+        }
+        return deck.length - 1;
+      },
+
+      updateStrength(deck, index, correct) {
+        if (index >= 0 && index < deck.length) {
+          deck[index].strength = correct ? deck[index].strength + 1 : 0;
+          deck[index].lastSeen = Date.now();
+        }
+      }
+    };
+
+    // =========================================================================
+    // APPLICATION STATE
+    // =========================================================================
+    const savedPractice = Storage.loadPracticeProgress();
+    const savedPrefs = Storage.loadPrefs();
+
+    const state = {
+      // UI mode: 'menu' | 'asking' | 'answered' | 'gameOver'
+      ui: {
+        mode: 'menu'
+      },
+
+      // Game state
+      game: {
+        type: null,           // 'practice' | 'challenge'
+        question: { a: 0, b: 0, ans: 0 },
+        currentFactIndex: -1,
+        deck: savedPractice?.deck || [],
+        paused: false,
+        timerSeconds: 0
+      },
+
+      // Statistics
+      stats: savedPractice?.stats || { correct: 0, total: 0, streak: 0, best: 0 },
+
+      // Best scores
+      bests: {
+        practice: savedPractice?.stats?.best || 0,
+        challenge: Storage.loadChallengeBest()
+      },
+
+      // Session tracking
+      session: {
+        autoAdvanceTimeout: null,
+        lastAskQuestionTime: 0,
+        lastKeystrokeTime: 0,
+        missedFacts: []       // Track wrong answers for game over display
+      },
+
+      // User preferences
+      prefs: {
+        theme: savedPrefs?.theme || 'light',
+        haptics: savedPrefs?.haptics ?? true,
+        sound: savedPrefs?.sound ?? false,
+        useKeypadOnly: savedPrefs?.useKeypadOnly ?? window.matchMedia('(pointer: coarse)').matches
+      }
+    };
+
+    // =========================================================================
+    // VISUAL FEEDBACK
+    // =========================================================================
+    const Feedback = {
+      flash(message, className) {
+        dom.feedback.textContent = message;
+        dom.feedback.className = className;
+        dom.feedback.classList.remove('flash');
+        void dom.feedback.offsetWidth; // Force reflow
+        dom.feedback.classList.add('flash');
+      },
+
+      flashInput(isCorrect) {
+        const cls = isCorrect ? 'input-ok' : 'input-bad';
+        dom.input.classList.add(cls);
+        setTimeout(() => dom.input.classList.remove(cls), CONFIG.INPUT_FLASH_DURATION_MS);
+      },
+
+      shakeQuestion() {
+        dom.question.classList.remove('shake');
+        void dom.question.offsetWidth;
+        dom.question.classList.add('shake');
+      }
+    };
+
+    // =========================================================================
+    // RENDER FUNCTIONS
+    // =========================================================================
+    function renderPreferences() {
+      const { theme, haptics, sound, useKeypadOnly } = state.prefs;
+
+      document.body.classList.toggle('dark', theme === 'dark');
+      dom.themeToggle.textContent = theme === 'dark' ? 'Light Mode' : 'Dark Mode';
+      dom.hapticsToggle.textContent = haptics ? 'Haptics On' : 'Haptics Off';
+      dom.soundToggle.textContent = sound ? 'Sound On' : 'Sound Off';
+      dom.keypadToggle.textContent = useKeypadOnly ? 'Show System KB' : 'Hide System KB';
     }
 
-    // Function to check if the provided answer is correct
-    function checkAnswer() {
-      const userAnswer = parseInt(document.getElementById("answer").value);
-      const feedbackElement = document.getElementById("feedback");
+    function renderSectionVisibility() {
+      const { mode } = state.ui;
+      const { type } = state.game;
 
-      if (userAnswer === currentQuestion.answer) {
-        feedbackElement.textContent = "Correct! Well done!";
-        feedbackElement.style.color = "green";
-      } else {
-        feedbackElement.textContent = `Oops! The correct answer is ${currentQuestion.answer}.`;
-        feedbackElement.style.color = "red";
+      dom.menu.classList.toggle('hidden', mode !== 'menu');
+      dom.gameArea.classList.toggle('hidden', mode === 'menu' || mode === 'gameOver');
+      dom.gameOver.classList.toggle('hidden', mode !== 'gameOver');
+      dom.keypad.classList.toggle('hidden', mode === 'menu' || mode === 'gameOver');
+      dom.pauseBtn.classList.toggle('hidden', type !== 'challenge');
+      dom.keypadToggle.classList.toggle('hidden', mode === 'menu' || mode === 'gameOver');
+    }
+
+    function renderMenu() {
+      const { practice, challenge } = state.bests;
+      dom.bestLine.textContent = `Practice best streak: ${practice} | Challenge best: ${challenge}`;
+      dom.status.textContent = 'Main menu. Choose a mode to start.';
+    }
+
+    function renderTimer() {
+      const { type, paused, timerSeconds } = state.game;
+      const isChallenge = type === 'challenge';
+
+      dom.timer.classList.toggle('hidden', !isChallenge);
+      dom.timerBar.classList.toggle('hidden', !isChallenge);
+
+      if (!isChallenge) return;
+
+      const timerLabel = paused ? `Paused — ${timerSeconds}s` : `${timerSeconds}s`;
+      dom.timer.textContent = timerLabel;
+      dom.timer.setAttribute('aria-label',
+        paused ? `Paused with ${timerSeconds} seconds left` : `${timerSeconds} seconds left`);
+      dom.pauseBtn.textContent = paused ? 'Resume' : 'Pause';
+
+      const pct = (timerSeconds / CONFIG.CHALLENGE_DURATION_SEC) * 100;
+      dom.timerBarFill.style.width = `${pct}%`;
+      dom.timerBarFill.classList.toggle('warning',
+        timerSeconds <= CONFIG.TIMER_WARNING_SEC && timerSeconds > CONFIG.TIMER_DANGER_SEC);
+      dom.timerBarFill.classList.toggle('danger', timerSeconds <= CONFIG.TIMER_DANGER_SEC);
+    }
+
+    function renderScore() {
+      const { streak, correct, total, best } = state.stats;
+
+      let flameClass = '';
+      if (streak >= CONFIG.STREAK_FIRE) flameClass = 'fire';
+      else if (streak >= CONFIG.STREAK_HOT) flameClass = 'hot';
+      const flameIcon = streak > 0 ? `<span class="flame ${flameClass}">🔥</span>` : '';
+
+      const accuracy = total > 0 ? ((correct / total) * 100).toFixed(0) : 0;
+      dom.score.innerHTML =
+        `Correct: <span>${correct}/${total} (${accuracy}%)</span>` +
+        `&nbsp;&nbsp;<span class="streak-display">Streak: <span>${streak}</span>${flameIcon} (Best: ${best})</span>`;
+    }
+
+    function renderQuestion() {
+      const { question } = state.game;
+      dom.question.textContent = `What is ${question.a} × ${question.b}?`;
+    }
+
+    function renderInput() {
+      const { mode } = state.ui;
+      const { paused } = state.game;
+      const { useKeypadOnly } = state.prefs;
+
+      dom.input.disabled = (mode === 'answered') || paused;
+      dom.input.readOnly = useKeypadOnly;
+      dom.input.setAttribute('inputmode', useKeypadOnly ? 'none' : 'numeric');
+      dom.checkBtn.disabled = paused;
+      dom.checkBtn.textContent = (mode === 'asking') ? 'Check' : 'Next';
+
+      if (mode === 'asking' && !paused && !useKeypadOnly && document.activeElement !== dom.input) {
+        dom.input.focus();
       }
     }
 
-    // Generate the first question when the page loads
-    window.onload = generateQuestion;
+    function renderStatus() {
+      const { type, paused } = state.game;
+
+      if (type === 'practice') {
+        dom.status.textContent = 'Practice mode. Keep going!';
+      } else {
+        dom.status.textContent = paused ? 'Challenge paused.' : 'Challenge running. Answer quickly!';
+      }
+    }
+
+    function renderGameOver() {
+      const { correct, total } = state.stats;
+      const { challenge } = state.bests;
+      const { missedFacts } = state.session;
+
+      const accuracy = total > 0 ? ((correct / total) * 100).toFixed(0) : 0;
+      dom.finalScore.textContent =
+        `You got ${correct} answers right in ${CONFIG.CHALLENGE_DURATION_SEC} seconds! (${accuracy}%)`;
+      dom.challengeBest.textContent = `Best challenge score: ${challenge}`;
+
+      // Render missed facts
+      if (missedFacts.length > 0) {
+        const uniqueMissed = [...new Map(missedFacts.map(f => [`${f.a}×${f.b}`, f])).values()];
+        dom.missedFacts.innerHTML = `
+          <h3>Review these facts:</h3>
+          <div>${uniqueMissed.map(f =>
+            `<span class="missed-fact">${f.a} × ${f.b} = ${f.ans}</span>`
+          ).join('')}</div>
+        `;
+      } else {
+        dom.missedFacts.innerHTML = '';
+      }
+
+      dom.status.textContent = 'Challenge complete. Review your score and play again.';
+    }
+
+    function renderGameArea() {
+      renderTimer();
+      renderScore();
+      renderQuestion();
+      renderInput();
+      renderStatus();
+    }
+
+    function render() {
+      const { mode } = state.ui;
+
+      renderPreferences();
+      renderSectionVisibility();
+
+      switch (mode) {
+        case 'menu':
+          renderMenu();
+          break;
+        case 'gameOver':
+          renderGameOver();
+          break;
+        case 'asking':
+        case 'answered':
+          renderGameArea();
+          break;
+      }
+    }
+
+    // =========================================================================
+    // STATE MANAGEMENT
+    // =========================================================================
+    function setState(updates) {
+      // Deep merge for nested objects
+      for (const [key, value] of Object.entries(updates)) {
+        if (typeof value === 'object' && value !== null && !Array.isArray(value) && state[key]) {
+          Object.assign(state[key], value);
+        } else {
+          state[key] = value;
+        }
+      }
+      render();
+    }
+
+    // =========================================================================
+    // GAME LOGIC
+    // =========================================================================
+    function clearAutoAdvance() {
+      if (state.session.autoAdvanceTimeout) {
+        clearTimeout(state.session.autoAdvanceTimeout);
+        state.session.autoAdvanceTimeout = null;
+      }
+    }
+
+    function askQuestion() {
+      // Guard: don't clear if user already started typing
+      if (state.ui.mode === 'asking' && dom.input.value !== '') {
+        return;
+      }
+
+      const now = Date.now();
+
+      // Guard: don't clear if user typed recently
+      if (now - state.session.lastKeystrokeTime < CONFIG.KEYSTROKE_GUARD_MS) {
+        return;
+      }
+
+      // Guard: prevent rapid-fire calls
+      if (now - state.session.lastAskQuestionTime < CONFIG.DEBOUNCE_MS) {
+        return;
+      }
+
+      state.session.lastAskQuestionTime = now;
+      clearAutoAdvance();
+
+      let nextQuestion = {};
+      let factIndex = -1;
+
+      if (state.game.type === 'practice') {
+        if (!state.game.deck.length) {
+          state.game.deck = SpacedRepetition.generateDeck();
+        }
+        factIndex = SpacedRepetition.selectFact(state.game.deck);
+        const fact = state.game.deck[factIndex];
+        nextQuestion = { a: fact.a, b: fact.b, ans: fact.ans };
+        state.game.deck[factIndex].lastSeen = Date.now();
+      } else {
+        const range = CONFIG.TABLE_MAX - CONFIG.TABLE_MIN + 1;
+        const a = Math.floor(Math.random() * range) + CONFIG.TABLE_MIN;
+        const b = Math.floor(Math.random() * range) + CONFIG.TABLE_MIN;
+        nextQuestion = { a, b, ans: a * b };
+      }
+
+      dom.input.value = '';
+      dom.feedback.textContent = '';
+
+      setState({
+        ui: { mode: 'asking' },
+        game: { question: nextQuestion, currentFactIndex: factIndex }
+      });
+
+      if (state.game.type === 'practice') {
+        Storage.savePracticeProgress(state.game, state.stats, state.game.deck);
+      }
+    }
+
+    function checkAnswer() {
+      if (state.game.paused) return;
+      clearAutoAdvance();
+
+      const raw = dom.input.value.trim();
+      if (raw === '') {
+        Feedback.flash("Type a number first.", "bad");
+        dom.input.focus();
+        return;
+      }
+
+      const val = Number(raw);
+      if (!Number.isFinite(val)) {
+        Feedback.flash("Use digits only.", "bad");
+        dom.input.focus();
+        return;
+      }
+
+      const isCorrect = val === state.game.question.ans;
+      const newStats = { ...state.stats, total: state.stats.total + 1 };
+
+      // Track old bests for high score detection
+      const oldChallengeBest = state.bests.challenge;
+      const oldPracticeBest = state.bests.practice;
+
+      if (isCorrect) {
+        Feedback.flash("Correct! Well done!", "ok");
+        Feedback.flashInput(true);
+        HapticsManager.correct();
+        SoundManager.playCorrect();
+        newStats.correct++;
+        newStats.streak++;
+        if (newStats.streak > newStats.best) newStats.best = newStats.streak;
+      } else {
+        Feedback.flash(`Oops! The correct answer is ${state.game.question.ans}.`, "bad");
+        Feedback.flashInput(false);
+        Feedback.shakeQuestion();
+        HapticsManager.wrong();
+        SoundManager.playWrong();
+        newStats.streak = 0;
+
+        // Track missed fact for game over display
+        if (state.game.type === 'challenge') {
+          state.session.missedFacts.push({ ...state.game.question });
+        }
+      }
+
+      // Update deck strength for practice mode
+      if (state.game.type === 'practice') {
+        SpacedRepetition.updateStrength(state.game.deck, state.game.currentFactIndex, isCorrect);
+      }
+
+      // Update practice best
+      let newPracticeBest = state.bests.practice;
+      if (state.game.type === 'practice' && newStats.best > newPracticeBest) {
+        newPracticeBest = newStats.best;
+      }
+
+      setState({
+        ui: { mode: 'answered' },
+        stats: newStats,
+        bests: { practice: newPracticeBest, challenge: state.bests.challenge }
+      });
+
+      if (state.game.type === 'practice') {
+        Storage.savePracticeProgress(state.game, state.stats, state.game.deck);
+      }
+
+      // Check for new high score
+      const isNewPracticeBest = state.game.type === 'practice' &&
+        newPracticeBest > oldPracticeBest && newPracticeBest >= CONFIG.HIGH_SCORE_MIN;
+      const isNewChallengeBest = state.game.type === 'challenge' &&
+        newStats.correct > oldChallengeBest && newStats.correct >= CONFIG.HIGH_SCORE_MIN;
+
+      if (isNewPracticeBest || isNewChallengeBest) {
+        ConfettiManager.launch();
+        SoundManager.playHighScore();
+      }
+
+      // Auto-advance on correct answer
+      if (isCorrect) {
+        state.session.autoAdvanceTimeout = setTimeout(() => {
+          if (state.ui.mode === 'answered') {
+            askQuestion();
+          }
+        }, CONFIG.AUTO_ADVANCE_DELAY_MS);
+      } else {
+        dom.checkBtn.focus();
+      }
+    }
+
+    function endChallenge() {
+      if (state.ui.mode === 'gameOver') return;
+
+      TimerManager.clear();
+      clearAutoAdvance();
+
+      const newBest = Math.max(state.bests.challenge, state.stats.correct);
+      Storage.saveChallengeBest(state.stats.correct);
+
+      setState({
+        ui: { mode: 'gameOver' },
+        game: { paused: false, timerSeconds: 0 },
+        bests: { practice: state.bests.practice, challenge: newBest }
+      });
+    }
+
+    function togglePause() {
+      if (state.game.type !== 'challenge') return;
+
+      if (!state.game.paused) {
+        TimerManager.pause();
+        setState({ game: { paused: true } });
+      } else {
+        TimerManager.resume();
+        setState({ game: { paused: false } });
+      }
+    }
+
+    function startPractice() {
+      const saved = Storage.loadPracticeProgress();
+      const stats = saved?.stats || { correct: 0, total: 0, streak: 0, best: 0 };
+      const deck = saved?.deck?.length ? saved.deck : SpacedRepetition.generateDeck();
+      const newPracticeBest = Math.max(state.bests.practice, stats.best);
+
+      setState({
+        game: {
+          type: 'practice',
+          deck,
+          paused: false,
+          timerSeconds: 0
+        },
+        stats,
+        bests: { practice: newPracticeBest, challenge: state.bests.challenge },
+        session: { missedFacts: [] }
+      });
+
+      Storage.savePracticeProgress(state.game, state.stats, state.game.deck);
+      askQuestion();
+    }
+
+    function startChallenge() {
+      TimerManager.clear();
+
+      setState({
+        game: {
+          type: 'challenge',
+          paused: false,
+          timerSeconds: CONFIG.CHALLENGE_DURATION_SEC
+        },
+        stats: { correct: 0, total: 0, streak: 0, best: 0 },
+        session: { missedFacts: [] }
+      });
+
+      TimerManager.start(
+        CONFIG.CHALLENGE_DURATION_MS,
+        (seconds) => {
+          if (seconds !== state.game.timerSeconds) {
+            setState({ game: { timerSeconds: seconds } });
+          }
+        },
+        endChallenge
+      );
+
+      askQuestion();
+    }
+
+    function returnToMenu() {
+      TimerManager.clear();
+      clearAutoAdvance();
+      setState({
+        ui: { mode: 'menu' },
+        game: { paused: false, timerSeconds: 0 }
+      });
+    }
+
+    // =========================================================================
+    // INPUT HANDLERS
+    // =========================================================================
+    function handleKeypadInput(event) {
+      const key = event.target.dataset.key;
+      if (!key || dom.input.disabled) return;
+
+      event.preventDefault();
+
+      if (key === 'backspace') {
+        dom.input.value = dom.input.value.slice(0, -1);
+      } else if (key === 'enter') {
+        dom.form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+      } else {
+        dom.input.value += key;
+      }
+
+      dom.input.focus();
+    }
+
+    function handleFormSubmit(e) {
+      e.preventDefault();
+      if (state.ui.mode === 'asking') {
+        checkAnswer();
+      } else if (state.ui.mode === 'answered') {
+        askQuestion();
+      }
+    }
+
+    function handleInputChange() {
+      state.session.lastKeystrokeTime = Date.now();
+    }
+
+    // =========================================================================
+    // PREFERENCE TOGGLES
+    // =========================================================================
+    function toggleTheme() {
+      state.prefs.theme = state.prefs.theme === 'dark' ? 'light' : 'dark';
+      Storage.savePrefs(state.prefs);
+      render();
+    }
+
+    function toggleHaptics() {
+      state.prefs.haptics = !state.prefs.haptics;
+      Storage.savePrefs(state.prefs);
+      render();
+    }
+
+    function toggleSound() {
+      state.prefs.sound = !state.prefs.sound;
+      Storage.savePrefs(state.prefs);
+      render();
+      if (state.prefs.sound) {
+        SoundManager.playTest();
+      }
+    }
+
+    function toggleKeypadMode() {
+      state.prefs.useKeypadOnly = !state.prefs.useKeypadOnly;
+      Storage.savePrefs(state.prefs);
+      render();
+      if (!state.prefs.useKeypadOnly) {
+        dom.input.focus();
+      } else {
+        dom.input.blur();
+      }
+    }
+
+    function resetProgress() {
+      if (!confirm('Are you sure you want to reset ALL progress? This cannot be undone.')) {
+        return;
+      }
+
+      try {
+        localStorage.removeItem(STORAGE_KEYS.practice);
+        localStorage.removeItem(STORAGE_KEYS.challengeBest);
+      } catch {
+        // ignore
+      }
+
+      setState({
+        game: { deck: SpacedRepetition.generateDeck() },
+        stats: { correct: 0, total: 0, streak: 0, best: 0 },
+        bests: { practice: 0, challenge: 0 }
+      });
+    }
+
+    // =========================================================================
+    // LIFECYCLE
+    // =========================================================================
+    function cleanup() {
+      TimerManager.clear();
+      clearAutoAdvance();
+      if (state.game.type === 'practice') {
+        Storage.savePracticeProgress(state.game, state.stats, state.game.deck);
+      }
+    }
+
+    function init() {
+      // Initialize sound
+      SoundManager.init();
+
+      // Button event listeners
+      dom.startPracticeBtn.addEventListener('click', startPractice);
+      dom.startChallengeBtn.addEventListener('click', startChallenge);
+      dom.pauseBtn.addEventListener('click', togglePause);
+      dom.playAgainBtn.addEventListener('click', returnToMenu);
+      dom.resetBtn.addEventListener('click', resetProgress);
+
+      // Preference toggles
+      dom.themeToggle.addEventListener('click', toggleTheme);
+      dom.hapticsToggle.addEventListener('click', toggleHaptics);
+      dom.soundToggle.addEventListener('click', toggleSound);
+      dom.keypadToggle.addEventListener('click', toggleKeypadMode);
+
+      // Game input
+      dom.keypad.addEventListener('click', handleKeypadInput);
+      dom.form.addEventListener('submit', handleFormSubmit);
+      dom.input.addEventListener('input', handleInputChange);
+
+      // Cleanup handlers
+      window.addEventListener('beforeunload', cleanup);
+      window.addEventListener('pagehide', cleanup);
+
+      // Initial render
+      render();
+      if (state.prefs.useKeypadOnly) dom.input.blur();
+    }
+
+    init();
+  })();
   </script>
 </body>
 </html>
